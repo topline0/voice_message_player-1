@@ -21,6 +21,7 @@ class VoiceMessage extends StatefulWidget {
     this.audioSrc,
     this.audioFile,
     this.duration,
+    this.player,
     this.formatDuration,
     this.showDuration = false,
     this.waveForm,
@@ -39,6 +40,7 @@ class VoiceMessage extends StatefulWidget {
   }) : super(key: key);
 
   final String? audioSrc;
+  final AudioPlayer? player;
   Future<File>? audioFile;
   final Duration? duration;
   final bool showDuration;
@@ -66,7 +68,7 @@ class VoiceMessage extends StatefulWidget {
 class _VoiceMessageState extends State<VoiceMessage>
     with SingleTickerProviderStateMixin {
   late StreamSubscription stream;
-  final AudioPlayer _player = AudioPlayer();
+  late AudioPlayer _player;
   final double maxNoiseHeight = 6.w(), noiseWidth = 28.5.w();
   Duration? _audioDuration;
   double maxDurationForSlider = .0000001;
@@ -83,6 +85,7 @@ class _VoiceMessageState extends State<VoiceMessage>
 
     _setDuration();
     super.initState();
+    _player = widget.player ?? AudioPlayer();
     stream = _player.onPlayerStateChanged.listen((event) {
       switch (event) {
         case PlayerState.stopped:
@@ -91,6 +94,7 @@ class _VoiceMessageState extends State<VoiceMessage>
           setState(() => _isPlaying = true);
           break;
         case PlayerState.paused:
+          _controller!.stop();
           setState(() => _isPlaying = false);
           break;
         case PlayerState.completed:
@@ -309,7 +313,6 @@ class _VoiceMessageState extends State<VoiceMessage>
 
   _stopPlaying() async {
     await _player.pause();
-    _controller!.stop();
   }
 
   void _setDuration() async {
@@ -317,6 +320,12 @@ class _VoiceMessageState extends State<VoiceMessage>
       _audioDuration = widget.duration;
     } else {
       _audioDuration = await jsAudio.AudioPlayer().setUrl(widget.audioSrc!);
+      if (widget.audioFile != null) {
+        String path = (await widget.audioFile!).path;
+        _audioDuration = await jsAudio.AudioPlayer().setFilePath(path);
+      } else if (widget.audioSrc != null) {
+        _audioDuration = await jsAudio.AudioPlayer().setUrl(widget.audioSrc!);
+      }
     }
     duration = _audioDuration!.inMilliseconds;
     maxDurationForSlider = duration + .0;
