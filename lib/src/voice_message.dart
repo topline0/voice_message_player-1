@@ -169,8 +169,7 @@ class _VoiceMessageState extends State<VoiceMessage>
                     height: 0,
                     child: CircularProgressIndicator(
                       strokeWidth: 1,
-                      color:
-                          widget.me ? widget.meFgColor : widget.contactFgColor,
+                      color: widget.mePlayIconColor,
                     ),
                   )
                 : Icon(
